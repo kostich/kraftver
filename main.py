@@ -82,7 +82,7 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4)
+        return json.dumps(response,sort_keys=True, indent=4) + '\n'
 
     # Check if the uploaded file is a valid wc3 map
     if not valid_map(file_name):
@@ -93,7 +93,7 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4)
+        return json.dumps(response,sort_keys=True, indent=4) + '\n'
 
     # Try to read the map
     try:
@@ -106,7 +106,7 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4)
+        return json.dumps(response,sort_keys=True, indent=4) + '\n'
         
     os.remove(file_name)
 
@@ -117,4 +117,4 @@ def route():
         "map_flags": map_data['map_flags'],
         "file_name": secure_filename(f.filename)
     }
-    return json.dumps(response,sort_keys=True, indent=4)
+    return json.dumps(response,sort_keys=True, indent=4) + '\n'
