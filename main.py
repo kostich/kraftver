@@ -49,6 +49,23 @@ def read_map(file_name):
     return map_data
 
 
+def valid_map(file_name):
+    """Checks if the magic numbers of a given file correspond to """
+    """a Warcraft III map file"""
+    with open(file_name, "rb") as f:
+        map_name_bytes = f.read(4)
+
+    try:
+        map_name_bytes = str(map_name_bytes.decode('utf-8'))
+    except UnicodeDecodeError:
+        return False
+
+    if map_name_bytes == "HM3W":
+        return True
+    else:
+        return False
+
+
 @app.route('/', methods=['POST'])
 def route():
     """Accepts map, reads it and returns found data."""
@@ -66,7 +83,18 @@ def route():
         }
         os.remove(file_name)
         return json.dumps(response,sort_keys=True, indent=4)
-    
+
+    # Check if the uploaded file is a valid wc3 map
+    if not valid_map(file_name):
+        response = {
+            "success": False,
+            "map_name": "error reading map: invalid file",
+            "map_flags": "error reading map: invalid file",
+            "file_name": secure_filename(f.filename)
+        }
+        os.remove(file_name)
+        return json.dumps(response,sort_keys=True, indent=4)
+
     # Try to read the map
     try:
         map_data = read_map(file_name)
