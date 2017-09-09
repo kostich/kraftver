@@ -22,7 +22,7 @@ def read_map(file_name):
 
         # while our byte isn't zero, read the bytes and convert them to text
         byte = map_file.read(1)
-        while byte != b'\x00':  
+        while byte != b'\x00':
             try:
                 map_name += byte.decode('utf-8')
             except UnicodeDecodeError:  # probably utf8 char so we need 1 more byte
@@ -55,6 +55,18 @@ def route():
     file_name = "/tmp/kraftver-" + str(uuid.uuid1())
     f = request.files['map']
     f.save(file_name)
+
+    # Check if we didn't receive an empty file
+    if os.stat(file_name).st_size == 0:
+        response = {
+            "success": False,
+            "map_name": "error reading map: empty file",
+            "map_flags": "error reading map: empty file",
+            "file_name": secure_filename(f.filename)
+        }
+        os.remove(file_name)
+        return json.dumps(response,sort_keys=True, indent=4)
+    
     # Try to read the map
     try:
         map_data = read_map(file_name)
