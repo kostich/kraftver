@@ -99,9 +99,6 @@ def route():
     try:
         map_data = read_map(file_name)
     except:
-        print("Error reading map.")
-        print(file_name)
-        print(secure_filename(f.filename))
         response = {
             "success": False,
             "map_name": "error reading map",
