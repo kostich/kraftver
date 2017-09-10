@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Main file"""
 # Kraftver is a simple Flask webserver to which you can upload an Warcraft III
 # map (in .w3c and .w3x formats) and get the map data back as a JSON response.
 
@@ -52,8 +53,10 @@ def read_map(file_name):
 
 
 def valid_map(file_name):
-    """Checks if the magic numbers of a given file correspond to """
-    """a Warcraft III map file"""
+    """
+    Checks if the magic numbers of a given file correspond to a
+    Warcraft III map file
+    """
     with open(file_name, "rb") as f:
         map_name_bytes = f.read(4)
 
@@ -64,8 +67,8 @@ def valid_map(file_name):
 
     if map_name_bytes == "HM3W":
         return True
-    else:
-        return False
+
+    return False
 
 
 @KRAFTVER.route('/', methods=['POST'])
@@ -84,7 +87,7 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4) + '\n'
+        return json.dumps(response, sort_keys=True, indent=4) + '\n'
 
     # Check if the uploaded file is a valid wc3 map
     if not valid_map(file_name):
@@ -95,7 +98,7 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4) + '\n'
+        return json.dumps(response, sort_keys=True, indent=4) + '\n'
 
     # Try to read the map
     try:
@@ -108,8 +111,8 @@ def route():
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
-        return json.dumps(response,sort_keys=True, indent=4) + '\n'
-        
+        return json.dumps(response, sort_keys=True, indent=4) + '\n'
+
     os.remove(file_name)
 
     # Return the data
@@ -119,7 +122,7 @@ def route():
         "map_flags": map_data['map_flags'],
         "file_name": secure_filename(f.filename)
     }
-    return json.dumps(response,sort_keys=True, indent=4) + '\n'
+    return json.dumps(response, sort_keys=True, indent=4) + '\n'
 
 if __name__ == "__main__":
     KRAFTVER.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)

@@ -1,5 +1,5 @@
-"""Config file for Kraftver"""
 #!/usr/bin/env python3
+"""Config file for Kraftver"""
 
 MAX_MAP_SIZE = 130  # in megabytes
 DEBUG = False
