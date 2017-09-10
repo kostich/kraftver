@@ -43,10 +43,15 @@ def read_map(file_name):
             for bit in byte:
                 map_flags += str(bit)
 
+        # read the max players number
+        max_player_num = map_file.read(4)
+        max_player_num = int.from_bytes(max_player_num, byteorder='little')
+
 
     map_data = {
         "map_name": map_name,
-        "map_flags": map_flags
+        "map_flags": map_flags,
+        "max_players": max_player_num
     }
 
     return map_data
@@ -83,7 +88,8 @@ def route():
         response = {
             "success": False,
             "map_name": "error reading map: empty file",
-            "map_flags": "error reading map: empty file",
+            "map_flags": None,
+            "max_players": None,
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
@@ -94,7 +100,8 @@ def route():
         response = {
             "success": False,
             "map_name": "error reading map: invalid file",
-            "map_flags": "error reading map: invalid file",
+            "map_flags": None,
+            "max_players": None,
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
@@ -107,7 +114,8 @@ def route():
         response = {
             "success": False,
             "map_name": "error reading map",
-            "map_flags": "error reading map",
+            "map_flags": None,
+            "max_players": None,
             "file_name": secure_filename(f.filename)
         }
         os.remove(file_name)
@@ -120,6 +128,7 @@ def route():
         "success": True,
         "map_name": map_data['map_name'],
         "map_flags": map_data['map_flags'],
+        "max_players": map_data['max_players'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
