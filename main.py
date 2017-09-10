@@ -76,6 +76,23 @@ def valid_map(file_name):
     return False
 
 
+def map_error(error_string, file):
+    """
+    Returns a simple dictionary explaining the error during the map
+    reading process, to be used as a JSON response
+    """
+    response = {
+            "success": False,
+            "error": str(error_string),
+            "map_name": None,
+            "map_flags": None,
+            "max_players": None,
+            "file_name": secure_filename(file.filename)
+    }
+
+    return response
+
+
 @KRAFTVER.route('/', methods=['POST'])
 def route():
     """Accepts map, reads it and returns found data."""
@@ -85,47 +102,30 @@ def route():
 
     # Check if we didn't receive an empty file
     if os.stat(file_name).st_size == 0:
-        response = {
-            "success": False,
-            "map_name": "error reading map: empty file",
-            "map_flags": None,
-            "max_players": None,
-            "file_name": secure_filename(f.filename)
-        }
         os.remove(file_name)
-        return json.dumps(response, sort_keys=True, indent=4) + '\n'
+        return json.dumps(map_error("empty map file", f), sort_keys=True, 
+                          indent=4) + '\n'
 
     # Check if the uploaded file is a valid wc3 map
     if not valid_map(file_name):
-        response = {
-            "success": False,
-            "map_name": "error reading map: invalid file",
-            "map_flags": None,
-            "max_players": None,
-            "file_name": secure_filename(f.filename)
-        }
         os.remove(file_name)
-        return json.dumps(response, sort_keys=True, indent=4) + '\n'
+        return json.dumps(map_error("invalid map file", f), sort_keys=True, 
+                          indent=4) + '\n'
 
     # Try to read the map
     try:
         map_data = read_map(file_name)
     except:
-        response = {
-            "success": False,
-            "map_name": "error reading map",
-            "map_flags": None,
-            "max_players": None,
-            "file_name": secure_filename(f.filename)
-        }
         os.remove(file_name)
-        return json.dumps(response, sort_keys=True, indent=4) + '\n'
+        return json.dumps(map_error("can't process map file", f), sort_keys=True, 
+                          indent=4) + '\n'
 
     os.remove(file_name)
 
     # Return the data
     response = {
         "success": True,
+        "error": None,
         "map_name": map_data['map_name'],
         "map_flags": map_data['map_flags'],
         "max_players": map_data['max_players'],
