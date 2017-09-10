@@ -5,11 +5,13 @@
 import uuid
 import os
 import json
+import config
 
 from flask import Flask, request
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+KRAFTVER = Flask(__name__)
+KRAFTVER.config['MAX_CONTENT_LENGTH'] = config.MAX_MAP_SIZE * 1024 * 1024
 
 def read_map(file_name):
     """Reads the map name from the supplied file and returns data about it."""
@@ -18,7 +20,7 @@ def read_map(file_name):
 
     with open(file_name, "rb") as map_file:
         # Read the map name, map name is stored from 9th byte until the \x00.
-        map_file.seek(8)  
+        map_file.seek(8)
 
         # while our byte isn't zero, read the bytes and convert them to text
         byte = map_file.read(1)
@@ -66,7 +68,7 @@ def valid_map(file_name):
         return False
 
 
-@app.route('/', methods=['POST'])
+@KRAFTVER.route('/', methods=['POST'])
 def route():
     """Accepts map, reads it and returns found data."""
     file_name = "/tmp/kraftver-" + str(uuid.uuid1())
@@ -118,3 +120,6 @@ def route():
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response,sort_keys=True, indent=4) + '\n'
+
+if __name__ == "__main__":
+    KRAFTVER.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
