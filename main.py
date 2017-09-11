@@ -56,11 +56,62 @@ def read_map(file_name, unpack_dir_name):
     except ValueError as e:
         raise ValueError(e)
 
+    # Reads the tileset from the file
+
+    if is_valid_w3e(unpack_dir_name + '/war3map.w3e'):
+        with open(unpack_dir_name + '/war3map.w3e', "rb") as f:
+            # 9nth byte contains the tileset
+            main_tileset = f.read(9)
+            main_tileset = main_tileset[-1]
+            main_tileset = str(chr(main_tileset))
+
+            # Determine the tileset from the char
+            if main_tileset == 'A':
+                main_tileset = "Ashenvale"
+            elif main_tileset == 'B':
+                main_tileset = "Barrens"
+            elif main_tileset == 'C':
+                main_tileset = "Felwood"
+            elif main_tileset == 'D':
+                main_tileset = "Dungeon"
+            elif main_tileset == 'F':
+                main_tileset = "Lordaeron Fall"
+            elif main_tileset == 'G':
+                main_tileset = "Underground"
+            elif main_tileset == 'L':
+                main_tileset = "Lordaeron Summer"
+            elif main_tileset == 'N':
+                main_tileset = "Northend"
+            elif main_tileset == 'Q':
+                main_tileset = "Village Fall"
+            elif main_tileset == 'V':
+                main_tileset = "Village"
+            elif main_tileset == 'W':
+                main_tileset = "Lordaeron Winter"
+            elif main_tileset == 'X':
+                main_tileset = "Dalaran"
+            elif main_tileset == 'Y':
+                main_tileset = "Cityscape"
+            elif main_tileset == 'Z':
+                main_tileset = "Sunken Ruins"
+            elif main_tileset == 'I':
+                main_tileset = "Icecrown"
+            elif main_tileset == 'J':
+                main_tileset = "Dalaran Ruins"
+            elif main_tileset == 'O':
+                main_tileset = "Outland"
+            elif main_tileset == 'K':
+                main_tileset = "Black Citadel"
+            else:
+                main_tileset = "Unknown (bug?): " + main_tileset
+    else:
+        raise ValueError("doesn't contain a valid .w3e file")
 
     map_data = {
         "map_name": map_name,
         "map_flags": map_flags,
-        "max_players": max_player_num
+        "max_players": max_player_num,
+        "tileset": main_tileset
     }
 
     return map_data
@@ -96,6 +147,7 @@ def map_error(error_string, file):
         "map_name": None,
         "map_flags": None,
         "max_players": None,
+        "tileset": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -223,6 +275,19 @@ def extract_map_file(file_name, unpack_dir_name):
     return True
 
 
+def is_valid_w3e(file_path):
+    with open(file_path, "rb") as f:
+        main_tileset_sig = f.read(4)
+
+    main_tileset_sig = str(main_tileset_sig.decode('utf-8'))
+
+    if main_tileset_sig == "W3E!":
+        return True
+    else:
+        print("Invalid w3e file", file_path)
+        return False
+
+
 def is_valid_list_file(list_file_path):
     """
     Checks if a given filename is a valid listfile. We read the listfile and
@@ -283,6 +348,7 @@ def route():
         "map_name": map_data['map_name'],
         "map_flags": map_data['map_flags'],
         "max_players": map_data['max_players'],
+        "tileset": map_data['tileset'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
