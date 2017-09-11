@@ -52,7 +52,7 @@ def read_map(file_name, unpack_dir_name):
 
     # Extract the MPQ archive from the map file
     try:
-        extract_map_file(file_name, unpack_dir_name)
+        warning = extract_map_file(file_name, unpack_dir_name)
     except ValueError as e:
         raise ValueError(e)
 
@@ -108,6 +108,7 @@ def read_map(file_name, unpack_dir_name):
         raise ValueError("doesn't contain a valid .w3e file")
 
     map_data = {
+        "warning": warning,
         "map_name": map_name,
         "map_flags": map_flags,
         "max_players": max_player_num,
@@ -144,6 +145,7 @@ def map_error(error_string, file):
     response = {
         "success": False,
         "error": str(error_string),
+        "warning": None,
         "map_name": None,
         "map_flags": None,
         "max_players": None,
@@ -156,6 +158,8 @@ def map_error(error_string, file):
 
 def extract_map_file(file_name, unpack_dir_name):
     """Extracts the given file name via the mpq-extract external tool."""
+    warning = ""  # will contain any non-fatal warning
+
     try:
         os.mkdir(unpack_dir_name)
     except FileExistsError:
@@ -210,8 +214,7 @@ def extract_map_file(file_name, unpack_dir_name):
 
     if not is_valid_list_file(unpack_dir_name + '/listfile') and \
         is_valid_list_file(unpack_dir_name + '/attributes'):
-        print("Note: Listfile and attributes file were swapped in this map \
-        file. Renaming accordingly.")
+        warning = "listfile and attribute file were swapped, reswapping"
         os.rename(unpack_dir_name + '/attributes',
                   unpack_dir_name + '/correctlistfile')
         os.rename(unpack_dir_name + '/listfile',
@@ -235,11 +238,9 @@ def extract_map_file(file_name, unpack_dir_name):
     # We check if the files listed in the listfile actually exist in the MPQ
     # archive or was the archive "protected" by removing some files.
     if len(list_file) != len(archive_files):
-        print("Note: Number of files listed in the listfile (" +
-              str(len(list_file)) + ") do not match the number of physical \
-              files (" + str(len(archive_files)) + ").")
-        print("Note: The map may have been \"protected\". Continuing but may \
-        encounter errors.")
+        warning = "number of files listed in the listfile (" + \
+        str(len(list_file)) + ") do not match the number of physical files (" + \
+        str(len(archive_files)) + "), protected map, may encounter errors"
 
     # We rename the files according to the listfile
     number_of_files = len(archive_files) - 1
@@ -272,7 +273,7 @@ def extract_map_file(file_name, unpack_dir_name):
 
         number_of_files -= 1
 
-    return True
+    return warning
 
 
 def is_valid_w3e(file_path):
@@ -284,7 +285,6 @@ def is_valid_w3e(file_path):
     if main_tileset_sig == "W3E!":
         return True
     else:
-        print("Invalid w3e file", file_path)
         return False
 
 
@@ -345,6 +345,7 @@ def route():
     response = {
         "success": True,
         "error": None,
+        "warning": map_data['warning'],
         "map_name": map_data['map_name'],
         "map_flags": map_data['map_flags'],
         "max_players": map_data['max_players'],
@@ -355,3 +356,4 @@ def route():
 
 if __name__ == "__main__":
     KRAFTVER.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
+ 
