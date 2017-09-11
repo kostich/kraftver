@@ -8,7 +8,6 @@ import os
 import json
 import shutil
 import subprocess
-import sys
 import config
 
 from flask import Flask, request
