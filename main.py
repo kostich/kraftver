@@ -6,6 +6,9 @@
 import uuid
 import os
 import json
+import shutil
+import subprocess
+import sys
 import config
 
 from flask import Flask, request
@@ -14,7 +17,7 @@ from werkzeug.utils import secure_filename
 KRAFTVER = Flask(__name__)
 KRAFTVER.config['MAX_CONTENT_LENGTH'] = config.MAX_MAP_SIZE * 1024 * 1024
 
-def read_map(file_name):
+def read_map(file_name, unpack_dir_name):
     """Reads the map name from the supplied file and returns data about it."""
     map_name = ""
     map_flags = ""
@@ -46,6 +49,12 @@ def read_map(file_name):
         # read the max players number
         max_player_num = map_file.read(4)
         max_player_num = int.from_bytes(max_player_num, byteorder='little')
+
+    # Extract the MPQ archive from the map file
+    try:
+        extract_map_file(file_name, unpack_dir_name)
+    except ValueError as e:
+        raise ValueError(e)
 
 
     map_data = {
@@ -82,45 +91,190 @@ def map_error(error_string, file):
     reading process, to be used as a JSON response
     """
     response = {
-            "success": False,
-            "error": str(error_string),
-            "map_name": None,
-            "map_flags": None,
-            "max_players": None,
-            "file_name": secure_filename(file.filename)
+        "success": False,
+        "error": str(error_string),
+        "map_name": None,
+        "map_flags": None,
+        "max_players": None,
+        "file_name": secure_filename(file.filename)
     }
 
     return response
+
+
+def extract_map_file(file_name, unpack_dir_name):
+    """Extracts the given file name via the mpq-extract external tool."""
+    try:
+        os.mkdir(unpack_dir_name)
+    except FileExistsError:
+        shutil.rmtree(unpack_dir_name)
+        os.mkdir(unpack_dir_name)
+
+    # Construct the extract shell command
+    extract_command = ("cd %s && mpq-extract -e %s &>/dev/null") % \
+                      (unpack_dir_name.replace(" ", "\\ "),
+                       file_name.replace(" ", "\\ "))
+    # We need to escape the command because it may contain ' (or spacec like
+    # above) which can confuse the shell
+    extract_command = extract_command.replace("'", "\\'")
+    extract_command = extract_command.replace("(", "\\(")
+    extract_command = extract_command.replace(")", "\\)")
+
+    # Call the external mpq-extract tool to extract the map
+    extract_shell = subprocess.Popen(extract_command,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+    extract_std = extract_shell.communicate()
+
+    if extract_shell.returncode != 0:  # can't extract the map file properly
+        raise ValueError("can't extract the map file properly: " \
+                         + str(extract_std[1].decode("utf-8")))
+
+    # Get the list of all physical files extracted by the mpq-extract tool
+    archive_files = sorted(os.listdir(unpack_dir_name))
+
+    # Sometimes mpg-extract doesn't extract anything at all and remains silent
+    #  about it
+    if len(archive_files) == 0:
+        raise ValueError("external tool didn't extract anything")
+
+    # And sometimes mpg-extract extracts one empty file, a valid map should
+    # contain at least 16 files inside
+    if len(archive_files) < 16:
+        raise ValueError("external tool didn't extract properly")
+
+    # Rename extracted files according to the data in listfile
+    # The last file is usually attributes and the file before the last
+    # file is listfile
+    os.rename(unpack_dir_name + '/' + archive_files[-2],
+              unpack_dir_name + '/listfile')
+    os.rename(unpack_dir_name + '/' + archive_files[-1],
+              unpack_dir_name + '/attributes')
+
+    # But sometimes listfile may be the last file, we need to check if our
+    # listfile is correct and rename a bit differently if the attributes and
+    # the listfile were swapped in the map file
+
+    if not is_valid_list_file(unpack_dir_name + '/listfile') and \
+        is_valid_list_file(unpack_dir_name + '/attributes'):
+        print("Note: Listfile and attributes file were swapped in this map \
+        file. Renaming accordingly.")
+        os.rename(unpack_dir_name + '/attributes',
+                  unpack_dir_name + '/correctlistfile')
+        os.rename(unpack_dir_name + '/listfile',
+                  unpack_dir_name + '/attributes')
+        os.rename(unpack_dir_name + '/correctlistfile',
+                  unpack_dir_name + '/listfile')
+    elif not is_valid_list_file(unpack_dir_name + '/listfile') \
+         and not is_valid_list_file(unpack_dir_name + '/attributes'):
+        raise ValueError("can't find valid listfile inside the map file")
+
+    # We renamed the listfile and attributes file successfully so we remove
+    # them from the list
+    archive_files = archive_files[:-2]
+
+    # We read the listfile into the list array
+    list_file = []
+    with open(unpack_dir_name + '/listfile', 'r') as f:
+        for line in f:
+            list_file.append(line.replace('\n', ''))
+
+    # We check if the files listed in the listfile actually exist in the MPQ
+    # archive or was the archive "protected" by removing some files.
+    if len(list_file) != len(archive_files):
+        print("Note: Number of files listed in the listfile (" +
+              str(len(list_file)) + ") do not match the number of physical \
+              files (" + str(len(archive_files)) + ").")
+        print("Note: The map may have been \"protected\". Continuing but may \
+        encounter errors.")
+
+    # We rename the files according to the listfile
+    number_of_files = len(archive_files) - 1
+
+    while number_of_files > -1:
+        # archive_files contains regular filenames in the directory
+        # (file00000.xxx, for example) list_file contains filenames from the
+        # listfile (war3map.doo for example)
+        genericfilename = unpack_dir_name + '/' + archive_files[number_of_files]
+        listfilename = unpack_dir_name + '/' + list_file[number_of_files]
+        os.rename(genericfilename, listfilename)
+
+        # The archive can also contain subdirectories so we need to recreate
+        # the subdirs and move files into it
+        if len(list_file[number_of_files].split('\\')) > 1:
+            path = ''
+
+            for subdir in list_file[number_of_files].split('\\')[:-1]:
+                path += subdir + '/'
+
+            os.makedirs(unpack_dir_name + '/' + path, exist_ok=True)  # Recreate the subdir
+
+            # .datadir/'AoW\Images\TGA\BTNRessAuraIcon.tga' bellow
+            filenamewithslashes = unpack_dir_name + '/' + list_file[number_of_files]
+            # .datadir/AoW/Images/TGA/'BTNRessAuraIcon.tga' bellow
+            filenameinsubdir = unpack_dir_name + '/' + path + \
+            list_file[number_of_files].split('\\')[-1]
+
+            shutil.move(filenamewithslashes, filenameinsubdir)
+
+        number_of_files -= 1
+
+    return True
+
+
+def is_valid_list_file(list_file_path):
+    """
+    Checks if a given filename is a valid listfile. We read the listfile and
+    check if any of the lines contain names such as war3map.w3i, war3map.wts
+    or war3map.shd. If they do, it's a valid listfile.
+    """
+    with open(list_file_path, 'r') as f:
+        try:
+            listfile_data = f.readlines()
+        except UnicodeDecodeError:  # prob. binary file, not a listfile
+            return False
+
+        if "war3map.w3i\n" in listfile_data or "war3map.wts\n" \
+            in listfile_data or "war3map.shd\n" in listfile_data:
+            return True
+        else:
+            return False
 
 
 @KRAFTVER.route('/', methods=['POST'])
 def route():
     """Accepts map, reads it and returns found data."""
     file_name = "/tmp/kraftver-" + str(uuid.uuid1())
+    unpack_dir_name = file_name + "-data"
     f = request.files['map']
     f.save(file_name)
 
     # Check if we didn't receive an empty file
     if os.stat(file_name).st_size == 0:
         os.remove(file_name)
-        return json.dumps(map_error("empty map file", f), sort_keys=True, 
+        shutil.rmtree(unpack_dir_name)
+        return json.dumps(map_error("empty map file", f), sort_keys=True,
                           indent=4) + '\n'
 
     # Check if the uploaded file is a valid wc3 map
     if not valid_map(file_name):
         os.remove(file_name)
-        return json.dumps(map_error("invalid map file", f), sort_keys=True, 
+        shutil.rmtree(unpack_dir_name)
+        return json.dumps(map_error("invalid map file", f), sort_keys=True,
                           indent=4) + '\n'
 
     # Try to read the map
     try:
-        map_data = read_map(file_name)
-    except:
+        map_data = read_map(file_name, unpack_dir_name)
+    except Exception as e:
         os.remove(file_name)
-        return json.dumps(map_error("can't process map file", f), sort_keys=True, 
-                          indent=4) + '\n'
+        shutil.rmtree(unpack_dir_name)
+        return json.dumps(map_error("can't process map file: " + str(e), f),
+                          sort_keys=True, indent=4) + '\n'
 
     os.remove(file_name)
+    shutil.rmtree(unpack_dir_name)
 
     # Return the data
     response = {
