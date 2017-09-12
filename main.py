@@ -340,7 +340,11 @@ def is_valid_list_file(list_file_path):
 @KRAFTVER.route('/', methods=['POST'])
 def route():
     """Accepts map, reads it and returns found data."""
-    file_name = "/tmp/kraftver-" + str(uuid.uuid1())
+    # remove slash at the end of TMP_DIR, if any
+    if config.TMP_DIR[-1] == "/":
+        config.TMP_DIR = config.TMP_DIR[:-1]
+
+    file_name = config.TMP_DIR + "/kraftver-" + str(uuid.uuid1())
     unpack_dir_name = file_name + "-data"
     f = request.files['map']
     f.save(file_name)
