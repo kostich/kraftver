@@ -56,7 +56,6 @@ def read_map(file_name, unpack_dir_name):
         raise ValueError(e)
 
     # Reads the tileset from the file
-
     if is_valid_w3e(unpack_dir_name + '/war3map.w3e'):
         with open(unpack_dir_name + '/war3map.w3e', "rb") as f:
             # 9nth byte contains the tileset
@@ -106,15 +105,33 @@ def read_map(file_name, unpack_dir_name):
     else:
         raise ValueError("doesn't contain a valid .w3e file")
 
+    # Read the expansion state
+    with open(unpack_dir_name + '/war3map.w3i', 'rb') as f:
+        # first 4 bytes contain infofile format version
+        info_file_bytes = f.read(4)
+        infofile_format_ver = int.from_bytes(info_file_bytes,
+                                             byteorder='little')
+
+        if infofile_format_ver == 18:
+            expansion_required = 'No'
+        elif infofile_format_ver == 25:
+            expansion_required = 'Yes'
+        else:
+            expansion_required = str(infofile_format_ver) + ' (bug?)'
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
         "map_flags": map_flags,
         "max_players": max_player_num,
-        "tileset": main_tileset
+        "tileset": main_tileset,
+        "expansion_required": expansion_required
     }
 
     return map_data
+
+
+
 
 
 def valid_map(file_name):
@@ -149,6 +166,7 @@ def map_error(error_string, file):
         "map_flags": None,
         "max_players": None,
         "tileset": None,
+        "expansion_required": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -349,6 +367,7 @@ def route():
         "map_flags": map_data['map_flags'],
         "max_players": map_data['max_players'],
         "tileset": map_data['tileset'],
+        "expansion_required": map_data['expansion_required'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
