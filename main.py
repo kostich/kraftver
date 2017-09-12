@@ -124,6 +124,10 @@ def read_map(file_name, unpack_dir_name):
         info_file_bytes = f.read(4)
         map_version = int.from_bytes(info_file_bytes, byteorder='little')
 
+        # third 4 bytes contain the version of editor used to create the map
+        info_file_bytes = f.read(4)  
+        editor_version = int.from_bytes(info_file_bytes, byteorder='little')
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -131,7 +135,8 @@ def read_map(file_name, unpack_dir_name):
         "max_players": max_player_num,
         "tileset": main_tileset,
         "expansion_required": expansion_required,
-        "map_version": map_version
+        "map_version": map_version,
+        "editor_version": editor_version,
     }
 
     return map_data
@@ -174,6 +179,7 @@ def map_error(error_string, file):
         "tileset": None,
         "expansion_required": None,
         "map_version": None,
+        "editor_version": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -376,6 +382,7 @@ def route():
         "tileset": map_data['tileset'],
         "expansion_required": map_data['expansion_required'],
         "map_version": map_data['map_version'],
+        "editor_version": map_data['editor_version'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
