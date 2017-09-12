@@ -119,13 +119,19 @@ def read_map(file_name, unpack_dir_name):
         else:
             expansion_required = str(infofile_format_ver) + ' (bug?)'
 
+        # second 4 bytes contain the number of saves during the map 
+        # development (ie. map version)
+        info_file_bytes = f.read(4)
+        map_version = int.from_bytes(info_file_bytes, byteorder='little')
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
         "map_flags": map_flags,
         "max_players": max_player_num,
         "tileset": main_tileset,
-        "expansion_required": expansion_required
+        "expansion_required": expansion_required,
+        "map_version": map_version
     }
 
     return map_data
@@ -167,6 +173,7 @@ def map_error(error_string, file):
         "max_players": None,
         "tileset": None,
         "expansion_required": None,
+        "map_version": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -368,6 +375,7 @@ def route():
         "max_players": map_data['max_players'],
         "tileset": map_data['tileset'],
         "expansion_required": map_data['expansion_required'],
+        "map_version": map_data['map_version'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
