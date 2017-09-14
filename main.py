@@ -148,6 +148,18 @@ def read_map(file_name, unpack_dir_name):
         else:
             map_name_infofile = map_name_infofile[:-1]
 
+        info_file_bytes = 1
+        map_author = ""
+        while info_file_bytes != 0:
+            info_file_bytes = f.read(1)
+            info_file_bytes = info_file_bytes[0]
+            map_author += str(chr(info_file_bytes))
+        if 'TRIGSTR' in map_author:
+            map_author = map_author.replace('\000', '')
+            map_author = strings_array[map_author]
+        else:
+            map_author = map_author.replace('\000', '')
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -157,7 +169,8 @@ def read_map(file_name, unpack_dir_name):
         "expansion_required": expansion_required,
         "map_version": map_version,
         "editor_version": editor_version,
-        "map_name_info_file": map_name_infofile
+        "map_name_info_file": map_name_infofile,
+        "map_author": map_author
     }
 
     return map_data
@@ -199,6 +212,7 @@ def map_error(error_string, file):
         "map_version": None,
         "editor_version": None,
         "map_name_info_file": None,
+        "map_author": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -477,6 +491,7 @@ def route():
         "map_version": map_data['map_version'],
         "editor_version": map_data['editor_version'],
         "map_name_info_file": map_data['map_name_info_file'],
+        "map_author": map_data['map_author'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
