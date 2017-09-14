@@ -175,6 +175,19 @@ def read_map(file_name, unpack_dir_name):
         else:
             map_description = map_description.replace('\000', '')
 
+        # read the string id from strings file describing recommended players
+        info_file_bytes = 1
+        recommended_players = ""
+        while info_file_bytes != 0:
+            info_file_bytes = f.read(1)
+            info_file_bytes = info_file_bytes[0]
+            recommended_players += str(chr(info_file_bytes))
+        if 'TRIGSTR' in recommended_players:
+            recommended_players = recommended_players.replace('\000', '')
+            recommended_players = strings_array[recommended_players]
+        else:
+            recommended_players = recommended_players.replace('\000', '')
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -186,7 +199,8 @@ def read_map(file_name, unpack_dir_name):
         "editor_version": editor_version,
         "map_name_info_file": map_name_infofile,
         "map_author": map_author,
-        "map_description": map_description
+        "map_description": map_description,
+        "recommended_players": recommended_players
     }
 
     return map_data
@@ -230,6 +244,7 @@ def map_error(error_string, file):
         "map_name_info_file": None,
         "map_author": None,
         "map_description": None,
+        "recommended_players": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -510,6 +525,7 @@ def route():
         "map_name_info_file": map_data['map_name_info_file'],
         "map_author": map_data['map_author'],
         "map_description": map_data['map_description'],
+        "recommended_players": map_data['recommended_players'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
