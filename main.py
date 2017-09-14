@@ -134,6 +134,7 @@ def read_map(file_name, unpack_dir_name):
         info_file_bytes = f.read(4)
         editor_version = int.from_bytes(info_file_bytes, byteorder='little')
 
+        # read the string id from strings file describing map name, again
         info_file_bytes = 1
         map_name_infofile = ""
         while info_file_bytes != 0:
@@ -148,6 +149,7 @@ def read_map(file_name, unpack_dir_name):
         else:
             map_name_infofile = map_name_infofile[:-1]
 
+        # read the string id from strings file describing map author
         info_file_bytes = 1
         map_author = ""
         while info_file_bytes != 0:
@@ -160,6 +162,19 @@ def read_map(file_name, unpack_dir_name):
         else:
             map_author = map_author.replace('\000', '')
 
+        # read the string id from strings file describing map description
+        info_file_bytes = 1
+        map_description = ""
+        while info_file_bytes != 0:
+            info_file_bytes = f.read(1)
+            info_file_bytes = info_file_bytes[0]
+            map_description += str(chr(info_file_bytes))
+        if 'TRIGSTR' in map_description:
+            map_description = map_description.replace('\000', '')
+            map_description = strings_array[map_description]
+        else:
+            map_description = map_description.replace('\000', '')
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -170,7 +185,8 @@ def read_map(file_name, unpack_dir_name):
         "map_version": map_version,
         "editor_version": editor_version,
         "map_name_info_file": map_name_infofile,
-        "map_author": map_author
+        "map_author": map_author,
+        "map_description": map_description
     }
 
     return map_data
@@ -213,6 +229,7 @@ def map_error(error_string, file):
         "editor_version": None,
         "map_name_info_file": None,
         "map_author": None,
+        "map_description": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -492,6 +509,7 @@ def route():
         "editor_version": map_data['editor_version'],
         "map_name_info_file": map_data['map_name_info_file'],
         "map_author": map_data['map_author'],
+        "map_description": map_data['map_description'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
