@@ -368,6 +368,7 @@ def read_string_file(unpack_dir_name):
 
 
 def is_valid_w3e(file_path):
+    """Checks if a given file is a valid w3e file."""
     with open(file_path, "rb") as f:
         main_tileset_sig = f.read(4)
 
