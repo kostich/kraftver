@@ -134,6 +134,20 @@ def read_map(file_name, unpack_dir_name):
         info_file_bytes = f.read(4)
         editor_version = int.from_bytes(info_file_bytes, byteorder='little')
 
+        info_file_bytes = 1
+        map_name_infofile = ""
+        while info_file_bytes != 0:
+            info_file_bytes = f.read(1)
+            info_file_bytes = info_file_bytes[0]
+            map_name_infofile += str(chr(info_file_bytes))
+        if 'TRIGSTR' in map_name_infofile:
+            # remove the \x00 garbage at the end
+            map_name_infofile = map_name_infofile.replace('\000', '')
+            # read the correct string from the strings_array
+            map_name_infofile = strings_array[map_name_infofile]
+        else:
+            map_name_infofile = map_name_infofile[:-1]
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -143,12 +157,10 @@ def read_map(file_name, unpack_dir_name):
         "expansion_required": expansion_required,
         "map_version": map_version,
         "editor_version": editor_version,
+        "map_name_info_file": map_name_infofile
     }
 
     return map_data
-
-
-
 
 
 def valid_map(file_name):
@@ -186,6 +198,7 @@ def map_error(error_string, file):
         "expansion_required": None,
         "map_version": None,
         "editor_version": None,
+        "map_name_info_file": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -463,6 +476,7 @@ def route():
         "expansion_required": map_data['expansion_required'],
         "map_version": map_data['map_version'],
         "editor_version": map_data['editor_version'],
+        "map_name_info_file": map_data['map_name_info_file'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
