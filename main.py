@@ -105,6 +105,12 @@ def read_map(file_name, unpack_dir_name):
     else:
         raise ValueError("doesn't contain a valid .w3e file")
 
+    # Read the .w3s string file
+    try:
+        strings_array = read_string_file(unpack_dir_name)
+    except ValueError as e:
+        raise ValueError(e)
+
     # Read the expansion state
     with open(unpack_dir_name + '/war3map.w3i', 'rb') as f:
         # first 4 bytes contain infofile format version
@@ -119,13 +125,13 @@ def read_map(file_name, unpack_dir_name):
         else:
             expansion_required = str(infofile_format_ver) + ' (bug?)'
 
-        # second 4 bytes contain the number of saves during the map 
+        # second 4 bytes contain the number of saves during the map
         # development (ie. map version)
         info_file_bytes = f.read(4)
         map_version = int.from_bytes(info_file_bytes, byteorder='little')
 
         # third 4 bytes contain the version of editor used to create the map
-        info_file_bytes = f.read(4)  
+        info_file_bytes = f.read(4)
         editor_version = int.from_bytes(info_file_bytes, byteorder='little')
 
     map_data = {
@@ -306,6 +312,61 @@ def extract_map_file(file_name, unpack_dir_name):
     return warning
 
 
+def read_string_file(unpack_dir_name):
+    """
+    Reads the string file from the given file. String file is a text file
+    which contains all the strings used within the map.
+    """
+    # We need to check if the strings file is a valid strings file at all.
+    if not is_valid_wts(unpack_dir_name + '/war3map.wts'):
+        raise ValueError("can't find valid strings file in the map")
+
+    with open(unpack_dir_name + '/war3map.wts', 'r') as f:
+        strings_array = {'TRIGSTR_START': ''}
+        total_lines = len(f.readlines())
+        f.seek(0)
+        current_line = 0
+
+        while current_line <= total_lines:
+            line = f.readline()
+            current_line += 1
+            if 'STRING' in line:
+                # create a key name for found string
+                stringno = int(line.split(' ')[1])
+                if stringno < 10:
+                    stringno = '00' + str(stringno)
+                elif stringno < 100:
+                    stringno = '0' + str(stringno)
+                keyname = 'TRIGSTR_' + str(stringno)
+                line = f.readline()  # read the next line
+                current_line += 1
+
+                # maybe we stumbled upon a comment
+                if line[:3] == '// ':
+                    line = f.readline()
+                    current_line += 1
+                    
+                # if the next line is a curly bracket which marks the beggining of the string
+                if line == '{\n':
+                    # read the next char which is hopefully the string value
+                    line = f.readline()
+                    current_line += 1
+                    value = ''
+
+                    # read the lines until we reach the mark which denotes end of the string
+                    while line != '}\n':
+                        value += line
+                        line = f.readline()
+                        current_line += 1
+
+                    # we reached the end of the string so we need to save the string into the dictionary
+                    strings_array[keyname] = value.strip('\n')
+
+        strings_array.pop("TRIGSTR_START", None)  # we don't need this first dict entry anymore
+
+    return strings_array
+
+
 def is_valid_w3e(file_path):
     with open(file_path, "rb") as f:
         main_tileset_sig = f.read(4)
@@ -335,6 +396,20 @@ def is_valid_list_file(list_file_path):
             return True
         else:
             return False
+
+
+def is_valid_wts(strings_file_path):
+    """Checks if the given file is a valid strings file."""
+    with open(strings_file_path, 'r') as f:
+        try:
+            first_line = f.readline()
+        except UnicodeDecodeError:  # probably a binary file
+            return False
+
+        if not 'STRING' in first_line:  # probably not a strings file
+            return False
+        else:
+            return True
 
 
 @KRAFTVER.route('/', methods=['POST'])
