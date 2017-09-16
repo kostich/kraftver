@@ -8,6 +8,7 @@ import os
 import json
 import shutil
 import subprocess
+import struct
 import config
 
 from flask import Flask, request
@@ -188,6 +189,51 @@ def read_map(file_name, unpack_dir_name):
         else:
             recommended_players = recommended_players.replace('\000', '')
 
+        # we read 8 floats (each float is 4 bytes) where the camera bounds 
+        # are defined, little endian
+        # first 4 floats are enough but we also read the second 4, for some 
+        # unidentified reason (verifying purposes?)
+        left_camera_bound = f.read(4)
+        left_camera_bound = struct.unpack_from('f', left_camera_bound)[0]
+        bottom_camera_bound = f.read(4)
+        bottom_camera_bound = struct.unpack_from('f', bottom_camera_bound)[0]
+        right_camera_bound = f.read(4)
+        right_camera_bound = struct.unpack_from('f', right_camera_bound)[0]
+        top_camera_bound = f.read(4)
+        top_camera_bound = struct.unpack_from('f', top_camera_bound)[0]
+        # read over the rest of the 4 floats, we do not know why they exist
+        for i in range(4):
+            f.read(4)
+
+        # read the camera bounds complements needed for calculating the 
+        # map width and height
+        camera_bounds_complement_a = f.read(4)
+        camera_bounds_complement_a = int.from_bytes(camera_bounds_complement_a,
+                                                    byteorder='little')
+        camera_bounds_complement_b = f.read(4)
+        camera_bounds_complement_b = int.from_bytes(camera_bounds_complement_b,
+                                                    byteorder='little')
+        camera_bounds_complement_c = f.read(4)
+        camera_bounds_complement_c = int.from_bytes(camera_bounds_complement_c,
+                                                    byteorder='little')
+        camera_bounds_complement_d = f.read(4)
+        camera_bounds_complement_d = int.from_bytes(camera_bounds_complement_d,
+                                                    byteorder='little')
+
+        # read the playable map width and height
+        playable_map_area_width = f.read(4)
+        playable_map_area_width = int.from_bytes(playable_map_area_width,
+                                                 byteorder='little')
+        playable_map_area_height = f.read(4)
+        playable_map_area_height = int.from_bytes(playable_map_area_height,
+                                                  byteorder='little')
+
+        # calculate the map width and height
+        map_width = camera_bounds_complement_a + playable_map_area_width + \
+                    camera_bounds_complement_b
+        map_height = camera_bounds_complement_c + playable_map_area_height + \
+                     camera_bounds_complement_d
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -200,6 +246,14 @@ def read_map(file_name, unpack_dir_name):
         "map_name_info_file": map_name_infofile,
         "map_author": map_author,
         "map_description": map_description,
+        "left_camera_bound": left_camera_bound,
+        "right_camera_bound": right_camera_bound,
+        "top_camera_bound": top_camera_bound,
+        "bottom_camera_bound": bottom_camera_bound,
+        "playable_map_area_height": playable_map_area_height,
+        "playable_map_area_width": playable_map_area_width,
+        "map_height": map_height,
+        "map_width": map_width,
         "recommended_players": recommended_players
     }
 
@@ -245,6 +299,14 @@ def map_error(error_string, file):
         "map_author": None,
         "map_description": None,
         "recommended_players": None,
+        "left_camera_bound": None,
+        "right_camera_bound": None,
+        "top_camera_bound": None,
+        "bottom_camera_bound": None,
+        "playable_map_area_height": None,
+        "playable_map_area_width": None,
+        "map_height": None,
+        "map_width": None,
         "file_name": secure_filename(file.filename)
     }
 
@@ -526,6 +588,14 @@ def route():
         "map_author": map_data['map_author'],
         "map_description": map_data['map_description'],
         "recommended_players": map_data['recommended_players'],
+        "left_camera_bound": map_data['left_camera_bound'],
+        "right_camera_bound": map_data['right_camera_bound'],
+        "top_camera_bound": map_data['top_camera_bound'],
+        "bottom_camera_bound": map_data['bottom_camera_bound'],
+        "playable_map_area_height": map_data['playable_map_area_height'],
+        "playable_map_area_width": map_data['playable_map_area_width'],
+        "map_height": map_data['map_height'],
+        "map_width": map_data['map_width'],
         "file_name": secure_filename(f.filename)
     }
     return json.dumps(response, sort_keys=True, indent=4) + '\n'
