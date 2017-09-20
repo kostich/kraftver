@@ -17,6 +17,53 @@ from werkzeug.utils import secure_filename
 KRAFTVER = Flask(__name__)
 KRAFTVER.config['MAX_CONTENT_LENGTH'] = config.MAX_MAP_SIZE * 1024 * 1024
 
+def decode_tileset(tile_char):
+    """
+    Returns the string describing the tileset (ground type) for a given char.
+    """
+
+    if tile_char == 'A':
+        tile_char = "Ashenvale"
+    elif tile_char == 'B':
+        tile_char = "Barrens"
+    elif tile_char == 'C':
+        tile_char = "Felwood"
+    elif tile_char == 'D':
+        tile_char = "Dungeon"
+    elif tile_char == 'F':
+        tile_char = "Lordaeron Fall"
+    elif tile_char == 'G':
+        tile_char = "Underground"
+    elif tile_char == 'L':
+        tile_char = "Lordaeron Summer"
+    elif tile_char == 'N':
+        tile_char = "Northend"
+    elif tile_char == 'Q':
+        tile_char = "Village Fall"
+    elif tile_char == 'V':
+        tile_char = "Village"
+    elif tile_char == 'W':
+        tile_char = "Lordaeron Winter"
+    elif tile_char == 'X':
+        tile_char = "Dalaran"
+    elif tile_char == 'Y':
+        tile_char = "Cityscape"
+    elif tile_char == 'Z':
+        tile_char = "Sunken Ruins"
+    elif tile_char == 'I':
+        tile_char = "Icecrown"
+    elif tile_char == 'J':
+        tile_char = "Dalaran Ruins"
+    elif tile_char == 'O':
+        tile_char = "Outland"
+    elif tile_char == 'K':
+        tile_char = "Black Citadel"
+    else:
+        tile_char = "Unknown (bug?): " + tile_char
+
+    return tile_char
+
+
 def read_map(file_name, unpack_dir_name):
     """Reads the map name from the supplied file and returns data about it."""
     map_name = ""
@@ -65,44 +112,7 @@ def read_map(file_name, unpack_dir_name):
             main_tileset = str(chr(main_tileset))
 
             # Determine the tileset from the char
-            if main_tileset == 'A':
-                main_tileset = "Ashenvale"
-            elif main_tileset == 'B':
-                main_tileset = "Barrens"
-            elif main_tileset == 'C':
-                main_tileset = "Felwood"
-            elif main_tileset == 'D':
-                main_tileset = "Dungeon"
-            elif main_tileset == 'F':
-                main_tileset = "Lordaeron Fall"
-            elif main_tileset == 'G':
-                main_tileset = "Underground"
-            elif main_tileset == 'L':
-                main_tileset = "Lordaeron Summer"
-            elif main_tileset == 'N':
-                main_tileset = "Northend"
-            elif main_tileset == 'Q':
-                main_tileset = "Village Fall"
-            elif main_tileset == 'V':
-                main_tileset = "Village"
-            elif main_tileset == 'W':
-                main_tileset = "Lordaeron Winter"
-            elif main_tileset == 'X':
-                main_tileset = "Dalaran"
-            elif main_tileset == 'Y':
-                main_tileset = "Cityscape"
-            elif main_tileset == 'Z':
-                main_tileset = "Sunken Ruins"
-            elif main_tileset == 'I':
-                main_tileset = "Icecrown"
-            elif main_tileset == 'J':
-                main_tileset = "Dalaran Ruins"
-            elif main_tileset == 'O':
-                main_tileset = "Outland"
-            elif main_tileset == 'K':
-                main_tileset = "Black Citadel"
-            else:
-                main_tileset = "Unknown (bug?): " + main_tileset
+            main_tileset = decode_tileset(main_tileset)
     else:
         raise ValueError("doesn't contain a valid .w3e file")
 
@@ -248,44 +258,7 @@ def read_map(file_name, unpack_dir_name):
         main_ground_type = f.read(1)
 
         main_ground_type = str(chr(main_ground_type[0]))
-        if main_ground_type == 'A':
-            main_ground_type = "Ashenvale"
-        elif main_ground_type == 'B':
-            main_ground_type = "Barrens"
-        elif main_ground_type == 'C':
-            main_ground_type = "Felwood"
-        elif main_ground_type == 'D':
-            main_ground_type = "Dungeon"
-        elif main_ground_type == 'F':
-            main_ground_type = "Lordaeron Fall"
-        elif main_ground_type == 'G':
-            main_ground_type = "Underground"
-        elif main_ground_type == 'L':
-            main_ground_type = "Lordaeron Summer"
-        elif main_ground_type == 'N':
-            main_ground_type = "Northend"
-        elif main_ground_type == 'Q':
-            main_ground_type = "Village Fall"
-        elif main_ground_type == 'V':
-            main_ground_type = "Village"
-        elif main_ground_type == 'W':
-            main_ground_type = "Lordaeron Winter"
-        elif main_ground_type == 'X':
-            main_ground_type = "Dalaran"
-        elif main_ground_type == 'Y':
-            main_ground_type = "Cityscape"
-        elif main_ground_type == 'Z':
-            main_ground_type = "Sunken Ruins"
-        elif main_ground_type == 'I':
-            main_ground_type = "Icecrown"
-        elif main_ground_type == 'J':
-            main_ground_type = "Dalaran Ruins"
-        elif main_ground_type == 'O':
-            main_ground_type = "Outland"
-        elif main_ground_type == 'K':
-            main_ground_type = "Black Citadel"
-        else:
-            main_ground_type = "Unknown (bug?): " + main_ground_type
+        main_ground_type = decode_tileset(main_ground_type)
 
     map_data = {
         "warning": warning,
