@@ -244,6 +244,49 @@ def read_map(file_name, unpack_dir_name):
             for bit in byte:
                 map_flags_w3i += str(bit)
 
+        # Now we read a byte which contains the map main ground type in w3i file
+        main_ground_type = f.read(1)
+
+        main_ground_type = str(chr(main_ground_type[0]))
+        if main_ground_type == 'A':
+            main_ground_type = "Ashenvale"
+        elif main_ground_type == 'B':
+            main_ground_type = "Barrens"
+        elif main_ground_type == 'C':
+            main_ground_type = "Felwood"
+        elif main_ground_type == 'D':
+            main_ground_type = "Dungeon"
+        elif main_ground_type == 'F':
+            main_ground_type = "Lordaeron Fall"
+        elif main_ground_type == 'G':
+            main_ground_type = "Underground"
+        elif main_ground_type == 'L':
+            main_ground_type = "Lordaeron Summer"
+        elif main_ground_type == 'N':
+            main_ground_type = "Northend"
+        elif main_ground_type == 'Q':
+            main_ground_type = "Village Fall"
+        elif main_ground_type == 'V':
+            main_ground_type = "Village"
+        elif main_ground_type == 'W':
+            main_ground_type = "Lordaeron Winter"
+        elif main_ground_type == 'X':
+            main_ground_type = "Dalaran"
+        elif main_ground_type == 'Y':
+            main_ground_type = "Cityscape"
+        elif main_ground_type == 'Z':
+            main_ground_type = "Sunken Ruins"
+        elif main_ground_type == 'I':
+            main_ground_type = "Icecrown"
+        elif main_ground_type == 'J':
+            main_ground_type = "Dalaran Ruins"
+        elif main_ground_type == 'O':
+            main_ground_type = "Outland"
+        elif main_ground_type == 'K':
+            main_ground_type = "Black Citadel"
+        else:
+            main_ground_type = "Unknown (bug?): " + main_ground_type
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
@@ -251,6 +294,7 @@ def read_map(file_name, unpack_dir_name):
         "map_flags_w3i": map_flags_w3i,
         "max_players": max_player_num,
         "tileset": main_tileset,
+        "main_ground_type": main_ground_type,
         "expansion_required": expansion_required,
         "map_version": map_version,
         "editor_version": editor_version,
@@ -304,6 +348,7 @@ def map_error(error_string, file):
         "map_flags_w3i": None,
         "max_players": None,
         "tileset": None,
+        "main_ground_type": None,
         "expansion_required": None,
         "map_version": None,
         "editor_version": None,
@@ -594,6 +639,7 @@ def route():
         "map_flags_w3i": map_data['map_flags_w3i'],
         "max_players": map_data['max_players'],
         "tileset": map_data['tileset'],
+        "main_ground_type": map_data['main_ground_type'],
         "expansion_required": map_data['expansion_required'],
         "map_version": map_data['map_version'],
         "editor_version": map_data['editor_version'],
