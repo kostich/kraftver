@@ -234,10 +234,21 @@ def read_map(file_name, unpack_dir_name):
         map_height = camera_bounds_complement_c + playable_map_area_height + \
                      camera_bounds_complement_d
 
+        # Read the 4 bytes from w3i file which contain the map flags
+        # TODO: we have to experiment and figure out the correct flag meaning
+        map_flags_w3i = ""
+        for i in range(4):
+            byte = f.read(1)
+            byte = ord(byte)
+            byte = bin(byte)[2:].rjust(8, '0')
+            for bit in byte:
+                map_flags_w3i += str(bit)
+
     map_data = {
         "warning": warning,
         "map_name": map_name,
         "map_flags": map_flags,
+        "map_flags_w3i": map_flags_w3i,
         "max_players": max_player_num,
         "tileset": main_tileset,
         "expansion_required": expansion_required,
@@ -290,6 +301,7 @@ def map_error(error_string, file):
         "warning": None,
         "map_name": None,
         "map_flags": None,
+        "map_flags_w3i": None,
         "max_players": None,
         "tileset": None,
         "expansion_required": None,
@@ -579,6 +591,7 @@ def route():
         "warning": map_data['warning'],
         "map_name": map_data['map_name'],
         "map_flags": map_data['map_flags'],
+        "map_flags_w3i": map_data['map_flags_w3i'],
         "max_players": map_data['max_players'],
         "tileset": map_data['tileset'],
         "expansion_required": map_data['expansion_required'],
