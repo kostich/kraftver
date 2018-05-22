@@ -634,4 +634,3 @@ def route():
 
 if __name__ == "__main__":
     KRAFTVER.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
- 
