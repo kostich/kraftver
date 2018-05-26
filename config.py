@@ -3,6 +3,6 @@
 
 MAX_MAP_SIZE = 130  # in megabytes
 DEBUG = False
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"
 PORT = 8080
 TMP_DIR = "/tmp"
