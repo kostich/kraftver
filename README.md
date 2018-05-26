@@ -6,9 +6,9 @@ Kraftver is a simple Flask webserver to which you can upload an Warcraft III map
 
 ## Requirements
 
-You will need [Flask](http://flask.pocoo.org/). You should be able to get it with `sudo pip3 install flask` on any modern Linux system.
+You will need [Flask](http://flask.pocoo.org/) and [Werkzeug](http://werkzeug.pocoo.org/). You should be able to get those via command `sudo pip3 install flask werkzeug` on any modern Linux system.
 
-You will also need the mpq-extract program from the mpq-tools project. These tools currently live in the repository https://github.com/mbroemme/mpq-tools.
+You will also need the mpq-extract program from the mpq-tools project. This tool is currently available in the repository https://github.com/mbroemme/mpq-tools.
 
 ## Installation/Usage
 
