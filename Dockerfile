@@ -13,5 +13,7 @@ RUN for mpq in $(echo /lib/*mpq*); do ln -s $mpq /lib64/$(echo $mpq | cut -d "/"
 RUN cd /tmp && git clone https://github.com/mbroemme/mpq-tools && cd mpq-tools && ./autogen.sh && PKG_CONFIG_PATH=/usr/lib/pkgconfig ./configure --prefix=/usr && make && make install && rm -rf /tmp/mpq-tools
 
 RUN git clone https://github.com/kostich/kraftver /opt/kraftver
-CMD /usr/bin/python3 /opt/kraftver/main.py
+
 EXPOSE 8080
+
+ENTRYPOINT /usr/bin/python3 /opt/kraftver/main.py
