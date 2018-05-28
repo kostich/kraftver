@@ -1,0 +1,7 @@
+.git*
+*.py
+LICENSE
+*.md
+__pycache__
+test/
+*.gif
